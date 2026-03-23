@@ -57,15 +57,14 @@ lbls = list(items.keys())
 p_lbls = lbls + [lbls[0]]
 p_scrs = scores + [scores[0]]
 
-# 6. 차트 그리기 (고정형 설정 추가)
+# 6. 차트 그리기
 fig = go.Figure()
 
-# 평균선 (클릭해도 안 사라지게 고정)
+# 평균선
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, 
     line=dict(color='gray', dash='dash'), 
-    name='전국 평균', hoverinfo='none',
-    itemclick=False, itemdoubleclick=False # 클릭 방지
+    name='전국 평균', hoverinfo='none'
 ))
 
 # 나의 기록
@@ -73,21 +72,25 @@ fig.add_trace(go.Scatterpolar(
     r=p_scrs, theta=p_lbls, fill='toself', 
     line=dict(color='#2ECC71', width=3), 
     fillcolor='rgba(46, 204, 113, 0.3)',
-    name='나의 기록',
-    itemclick=False, itemdoubleclick=False # 클릭 방지
+    name='나의 기록'
 ))
 
+# 🛠️ 차트 고정 및 보안 설정
 fig.update_layout(
     polar=dict(
-        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['0', '평균', '10']),
-        angularaxis=dict(direction="clockwise", period=5) # 회전 방지 보조
+        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['0', '평균', '10'])
     ),
     showlegend=True,
-    dragmode=False, # 마우스로 차트를 끌어서 이동하는 기능 끄기
-    modebar_remove=['zoom', 'pan', 'select', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d'] # 도구바 정리
+    dragmode=False # 마우스로 끌어 이동하는 기능 끄기
 )
 
-st.plotly_chart(fig, use_container_width=True, config={'staticPlot': False, 'scrollZoom': False})
+# 🛠️ 상호작용 원천 봉쇄 (마우스 휠 줌 끄기)
+st.plotly_chart(fig, use_container_width=True, config={
+    'staticPlot': False, 
+    'scrollZoom': False, # 마우스 휠 줌 끄기
+    'displayModeBar': True, # 카메라 아이콘만 남기기 위해 켬
+    'modeBarButtonsToRemove': ['zoom', 'pan', 'select', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
+})
 
 # 7. 기록 요약 표
 st.write("### 📝 나의 측정 결과 요약")
