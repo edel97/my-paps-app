@@ -14,7 +14,7 @@ st.sidebar.header("🏫 학생 정보 입력")
 grade = st.sidebar.selectbox("학년을 선택하세요", ["4학년", "6학년"])
 gender = st.sidebar.radio("성별을 선택하세요", ["남", "여"])
 
-# 3. 기준 데이터 설정
+# 3. 기준 데이터 설정 (평균기록)
 if grade == "4학년":
     items = {
         "실천의지": {"ref": 5.0, "rev": False, "u": "점"},
@@ -60,11 +60,11 @@ p_scrs = scores + [scores[0]]
 # 6. 차트 그리기
 fig = go.Figure()
 
-# 평균선
+# 평균선 (이름 수정됨)
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, 
     line=dict(color='gray', dash='dash'), 
-    name='전국 평균', hoverinfo='none'
+    name='평균기록', hoverinfo='none'
 ))
 
 # 나의 기록
@@ -75,28 +75,28 @@ fig.add_trace(go.Scatterpolar(
     name='나의 기록'
 ))
 
-# 🛠️ 차트 고정 및 보안 설정
+# 차트 고정 설정
 fig.update_layout(
     polar=dict(
         radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['0', '평균', '10'])
     ),
     showlegend=True,
-    dragmode=False # 마우스로 끌어 이동하는 기능 끄기
+    dragmode=False
 )
 
-# 🛠️ 상호작용 원천 봉쇄 (마우스 휠 줌 끄기)
+# 상호작용 설정
 st.plotly_chart(fig, use_container_width=True, config={
     'staticPlot': False, 
-    'scrollZoom': False, # 마우스 휠 줌 끄기
-    'displayModeBar': True, # 카메라 아이콘만 남기기 위해 켬
+    'scrollZoom': False,
+    'displayModeBar': True,
     'modeBarButtonsToRemove': ['zoom', 'pan', 'select', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d']
 })
 
-# 7. 기록 요약 표
+# 7. 기록 요약 표 (표 제목도 수정됨)
 st.write("### 📝 나의 측정 결과 요약")
 df_data = {
     "종목": lbls,
     "나의 기록": [f"{vals[k]} {items[k]['u']}" for k in lbls],
-    "평균(참고)": [f"{items[k]['ref']} {items[k]['u']}" for k in lbls]
+    "평균기록": [f"{items[k]['ref']} {items[k]['u']}" for k in lbls]
 }
 st.table(pd.DataFrame(df_data))
