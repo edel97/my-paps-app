@@ -26,7 +26,7 @@ if grade == "4학년":
         "앉아윗몸앞으로굽히기(유연성)": {"avg": 5.0 if gender == "남" else 8.0, "max": 18.0 if gender == "남" else 21.0, "rev": False, "u": "cm"},
         "악력(근력)": {"avg": 14.0 if gender == "남" else 13.0, "max": 24.0 if gender == "남" else 22.0, "rev": False, "u": "kg"}
     }
-else: # 6학년
+else:
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
         "오래달리기-걷기(심폐지구력)": {"avg": 400.0 if gender == "남" else 500.0, "max": 240.0 if gender == "남" else 300.0, "rev": True, "u": "초"},
@@ -40,12 +40,11 @@ st.sidebar.divider()
 st.sidebar.write("### 📝 기록 입력")
 tab1, tab2 = st.sidebar.tabs(["1차 (3월)", "2차 (5월)"])
 
-# 데이터 저장을 위한 딕셔너리
 v1, v2 = {}, {}
 
-for k, v in base.items():
-    # 1차 입력
-    with tab1:
+# 1차 기록 입력
+with tab1:
+    for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
             st.write(f"{k}")
             m1 = st.number_input("분", value=int(v['avg'] // 60), key=f"1_{k}_m", min_value=0)
@@ -53,9 +52,10 @@ for k, v in base.items():
             v1[k] = float(m1 * 60 + s1)
         else:
             v1[k] = st.number_input(f"{k} ({v['u']})", value=float(v['avg']), key=f"1_{k}")
-    
-    # 2차 입력
-    with tab2:
+
+# 2차 기록 입력
+with tab2:
+    for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
             st.write(f"{k}")
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
@@ -69,9 +69,9 @@ def calc_score(vals):
     scores = []
     for k, v in base.items():
         val, avg, mx = vals[k], v['avg'], v['max']
-        if v['rev']: # 낮을수록 좋은 종목
+        if v['rev']:
             score = 5 + (avg - val) / (avg - mx) * 5
-        else: # 높을수록 좋은 종목
+        else:
             score = 5 + (val - avg) / (mx - avg) * 5
         scores.append(min(10.0, max(0.0, float(score))))
     return scores + [scores[0]]
@@ -79,23 +79,21 @@ def calc_score(vals):
 lbls = list(base.keys())
 p_lbls = lbls + [lbls[0]]
 
-# 6. 차트 그리기 (안전한 그리기 방식)
+# 6. 차트 그리기
 fig = go.Figure()
 
-# 평균 기준선 (항상 표시)
+# 평균 기준선
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, line=dict(color='gray', dash='dot', width=1), 
     name='평균 기록', hoverinfo='none'
 ))
 
-# 1차 그래프
 if "1차" in view_option or "함께" in view_option:
     fig.add_trace(go.Scatterpolar(
         r=calc_score(v1), theta=p_lbls, fill='toself', 
         name='1차(3월)', line=dict(color='#3498DB', width=3)
     ))
 
-# 2차 그래프
 if "2차" in view_option or "함께" in view_option:
     fig.add_trace(go.Scatterpolar(
         r=calc_score(v2), theta=p_lbls, fill='toself', 
@@ -112,4 +110,14 @@ st.plotly_chart(fig, use_container_width=True)
 
 # 7. 데이터 표 출력
 def format_val(val, label, unit):
-    if grade
+    if grade == "6학년" and "심폐지구력" in label:
+        return f"{int(val // 60)}분 {int(val % 60)}초"
+    return f"{val} {unit}"
+
+st.write("### 📝 기록 데이터 확인")
+df_data = {
+    "종목": lbls,
+    "1차 기록(3월)": [format_val(v1[k], k, base[k]['u']) for k in lbls],
+    "2차 기록(5월)": [format_val(v2[k], k, base[k]['u']) for k in lbls]
+}
+st.table(pd.DataFrame(df_data))
