@@ -42,22 +42,20 @@ tab1, tab2 = st.sidebar.tabs(["1차 (3월)", "2차 (5월)"])
 
 v1, v2 = {}, {}
 
-# 1차 기록 입력
 with tab1:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.write(f"**{k}**")
+            st.write(k)
             m1 = st.number_input("분", value=int(v['avg'] // 60), key=f"1_{k}_m", min_value=0)
             s1 = st.number_input("초", value=int(v['avg'] % 60), key=f"1_{k}_s", min_value=0, max_value=59)
             v1[k] = float(m1 * 60 + s1)
         else:
             v1[k] = st.number_input(f"{k} ({v['u']})", value=float(v['avg']), key=f"1_{k}")
 
-# 2차 기록 입력
 with tab2:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.write(f"**{k}**")
+            st.write(k)
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
             s2 = st.number_input("초", value=int(v['avg'] % 60), key=f"2_{k}_s", min_value=0, max_value=59)
             v2[k] = float(m2 * 60 + s2)
@@ -82,7 +80,6 @@ p_lbls = lbls + [lbls[0]]
 # 6. 차트 그리기
 fig = go.Figure()
 
-# 평균 기준선
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, line=dict(color='gray', dash='dot', width=1), 
     name='평균 기록', hoverinfo='none'
@@ -100,27 +97,28 @@ if "2차" in view_option or "함께" in view_option:
         name='2차(5월)', line=dict(color='#E74C3C', width=3)
     ))
 
-# 🛠️ 가장 안전한 레이아웃 설정
+# 🛠️ [중요] 차트가 돌아가거나 사라지지 않도록 레이아웃 고정
 fig.update_layout(
     polar=dict(
         radialaxis=dict(visible=True, range=[0, 10], tickvals=[5], ticktext=['평균']),
-        angularaxis=dict(tickfont=dict(size=11))
+        angularaxis=dict(tickfont=dict(size=11), rotation=90, direction="clockwise") # 방향 및 회전 고정
     ),
     showlegend=True,
-    margin=dict(l=80, r=80, t=50, b=50),
-    height=500
+    margin=dict(l=100, r=100, t=50, b=50), # 여백 넉넉히 주어 글자 가림 방지
+    height=500,
+    dragmode=False # 마우스 드래그로 차트가 돌아가는 기능 차단
 )
 
 # 카메라 아이콘 포함 렌더링
-st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
+st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True, 'scrollZoom': False})
 
 # 7. 데이터 표 출력
+st.write("### 📝 기록 데이터 확인")
 def format_val(val, label, unit):
     if grade == "6학년" and "심폐지구력" in label:
         return f"{int(val // 60)}분 {int(val % 60)}초"
     return f"{val} {unit}"
 
-st.write("### 📝 기록 데이터 확인")
 df_data = {
     "종목": lbls,
     "1차 기록(3월)": [format_val(v1[k], k, base[k]['u']) for k in lbls],
