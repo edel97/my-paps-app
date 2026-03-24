@@ -2,14 +2,14 @@ import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 
-# 1. 페이지 설정 (모바일 대응을 위해 레이아웃 최적화)
+# 1. 페이지 설정
 st.set_page_config(page_title="나의 성장 기록", layout="centered")
 
 st.title("🌱 나의 성장 기록")
 st.write("---")
 
 # 🌟 선생님 요청 멘트
-st.info("🌟기록은 숫자일 뿐, 어제보다 나아지려고 애쓴 너의 노력이 진짜!")
+st.info("기록은 숫자일 뿐, 어제보다 나아지려고 애쓴 너의 노력이 진짜!")
 
 # 2. 설정 메뉴
 st.sidebar.header("⚙️ 설정")
@@ -46,7 +46,7 @@ v1, v2 = {}, {}
 with tab1:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.write(k) # 글자 크기 통일
+            st.markdown(f"**{k}**") # 글자 크기 강제 통일
             m1 = st.number_input("분", value=int(v['avg'] // 60), key=f"1_{k}_m", min_value=0)
             s1 = st.number_input("초", value=int(v['avg'] % 60), key=f"1_{k}_s", min_value=0, max_value=59)
             v1[k] = float(m1 * 60 + s1)
@@ -57,7 +57,7 @@ with tab1:
 with tab2:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.write(k) # 글자 크기 통일
+            st.markdown(f"**{k}**") # 글자 크기 강제 통일
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
             s2 = st.number_input("초", value=int(v['avg'] % 60), key=f"2_{k}_s", min_value=0, max_value=59)
             v2[k] = float(m2 * 60 + s2)
@@ -79,10 +79,9 @@ def calc_score(vals):
 lbls = list(base.keys())
 p_lbls = lbls + [lbls[0]]
 
-# 6. 차트 그리기 (모바일 잘림 방지 및 여백 조정)
+# 6. 차트 그리기
 fig = go.Figure()
 
-# 평균 기준선
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, line=dict(color='gray', dash='dot', width=1), 
     name='평균 기록', hoverinfo='none'
@@ -103,17 +102,16 @@ if "2차" in view_option or "함께" in view_option:
 fig.update_layout(
     polar=dict(
         radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', '']),
-        angularaxis=dict(tickfont=dict(size=10), rotation=90, direction="clockwise")
+        angularaxis=dict(tickfont=dict(size=11), pad=15) # 글자 잘림 방지용 패딩
     ),
-    # 모바일 대응: 여백(margin) 최적화 및 패딩(pad) 추가로 글자 가림 방지
-    margin=dict(l=50, r=50, t=30, b=30),
-    legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+    margin=dict(l=60, r=60, t=40, b=40),
+    legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
     dragmode=False,
-    height=450 # 차트 높이 조절로 모바일 가독성 향상
+    height=500
 )
 
-# 7. 차트 렌더링
-st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+# 7. 차트 렌더링 (카메라 아이콘 활성화)
+st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
 
 # 8. 데이터 표 출력
 def format_val(val, label, unit):
