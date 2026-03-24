@@ -8,10 +8,10 @@ st.set_page_config(page_title="나의 성장 기록", layout="centered")
 st.title("🌱 나의 성장 기록")
 st.write("---")
 
-# 🌟 선생님이 요청하신 멘트로 수정
+# 🌟 선생님 요청 멘트
 st.info("기록은 숫자일 뿐, 어제보다 나아지려고 애쓴 너의 노력이 진짜!")
 
-# 2. 설정 메뉴 (반 선택 삭제)
+# 2. 설정 메뉴
 st.sidebar.header("⚙️ 설정")
 view_option = st.sidebar.radio("보고 싶은 기록", ["1차 기록 보기", "2차 기록 보기", "1, 2차 함께 비교하기"])
 grade = st.sidebar.selectbox("학년", ["4학년", "6학년"])
@@ -35,30 +35,25 @@ else: # 6학년
         "악력": {"avg": 22.0 if gender == "남" else 20.0, "max": 35.0 if gender == "남" else 32.0, "rev": False, "u": "kg"}
     }
 
-# 4. 입력 칸 정렬 (1, 2차 나란히 배치)
+# 4. 입력 섹션 (탭을 사용하여 1, 2차 구분 - 오류 방지 및 가독성 향상)
 st.sidebar.divider()
 st.sidebar.write("### 📝 기록 입력")
+tab1, tab2 = st.sidebar.tabs(["1차 (3월)", "2차 (5월)"])
 
-def input_val(label, v_info, key_p):
-    # 6학년 심폐지구력만 분/초 입력, 나머지는 일반 입력 (글자 굵기 통일)
-    if grade == "6학년" and label == "오래달리기-걷기":
-        st.sidebar.write(f"{label}") # 진하게 나오지 않도록 일반 텍스트로 수정
-        m = st.sidebar.number_input("분", value=int(v_info['avg'] // 60), key=f"{key_p}_{label}_m", min_value=0)
-        s = st.sidebar.number_input("초", value=int(v_info['avg'] % 60), key=f"{key_p}_{label}_s", min_value=0, max_value=59)
-        return float(m * 60 + s)
-    else:
-        return st.sidebar.number_input(f"{label} ({v_info['u']})", value=float(v_info['avg']), key=f"{key_p}_{label}")
+def input_val(label, v_info, key_p, tab_obj):
+    with tab_obj:
+        if grade == "6학년" and label == "오래달리기-걷기":
+            st.write(f"{label}")
+            m = st.number_input("분", value=int(v_info['avg'] // 60), key=f"{key_p}_{label}_m", min_value=0)
+            s = st.number_input("초", value=int(v_info['avg'] % 60), key=f"{key_p}_{label}_s", min_value=0, max_value=59)
+            return float(m * 60 + s)
+        else:
+            return st.number_input(f"{label} ({v_info['u']})", value=float(v_info['avg']), key=f"{key_p}_{label}")
 
-# 1, 2차를 세로로 줄줄이 나오지 않게 컬럼으로 분리
-col_input1, col_input2 = st.sidebar.columns(2)
-with col_input1:
-    st.write("#### 1차 (3월)")
-    v1 = {k: input_val(k, v, "1") for k, v in base.items()}
-with col_input2:
-    st.write("#### 2차 (5월)")
-    v2 = {k: input_val(k, v, "2") for k, v in base.items()}
+v1 = {k: input_val(k, v, "1", tab1) for k, v in base.items()}
+v2 = {k: input_val(k, v, "2", tab2) for k, v in base.items()}
 
-# 5. 점수 계산
+# 5. 점수 계산 함수
 def calc_score(vals):
     scores = []
     for k, v in base.items():
@@ -66,3 +61,36 @@ def calc_score(vals):
         if v['rev']: score = 5 + (avg - val) / (avg - mx) * 5
         else: score = 5 + (val - avg) / (mx - avg) * 5
         scores.append(min(10.0, max(0.0, float(score))))
+    return scores + [scores[0]]
+
+lbls = list(base.keys())
+p_lbls = lbls + [lbls[0]]
+
+# 6. 차트 그리기
+fig = go.Figure()
+fig.add_trace(go.Scatterpolar(r=[5]*6, theta=p_lbls, line=dict(color='gray', dash='dot', width=1), name='평균 기록', hoverinfo='none'))
+
+if "1차" in view_option or "함께" in view_option:
+    fig.add_trace(go.Scatterpolar(r=calc_score(v1), theta=p_lbls, fill='toself', name='1차(3월)', line=dict(color='#3498DB', width=3)))
+if "2차" in view_option or "함께" in view_option:
+    fig.add_trace(go.Scatterpolar(r=calc_score(v2), theta=p_lbls, fill='toself', name='2차(5월)', line=dict(color='#E74C3C', width=3)))
+
+fig.update_layout(
+    polar=dict(radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', ''])),
+    dragmode=False, showlegend=True, height=550
+)
+st.plotly_chart(fig, use_container_width=True)
+
+# 7. 데이터 표 출력
+def format_val(val, label, unit):
+    if grade == "6학년" and label == "오래달리기-걷기":
+        return f"{int(val // 60)}분 {int(val % 60)}초"
+    return f"{val} {unit}"
+
+st.write("### 📝 기록 데이터 확인")
+df = pd.DataFrame({
+    "종목": lbls,
+    "1차 기록(3월)": [format_val(v1[k], k, base[k]['u']) for k in lbls],
+    "2차 기록(5월)": [format_val(v2[k], k, base[k]['u']) for k in lbls]
+})
+st.table(df)
