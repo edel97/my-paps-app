@@ -5,8 +5,8 @@ import pandas as pd
 # 1. 페이지 설정
 st.set_page_config(page_title="나의 성장 기록", layout="centered")
 
-# 🛠️ [수정] 제목 글자 크기를 모바일에 맞춰 조정 (기존보다 약간 작게)
-st.markdown("<h2 style='text-align: center;'>🌱 나의 성장 기록</h2>", unsafe_allow_html=True)
+# 🛠️ 제목 글자 크기 최적화 (모바일에서 한 줄로 나오도록)
+st.markdown("<h2 style='text-align: center; font-size: 1.5rem;'>🌱 나의 성장 기록</h2>", unsafe_allow_html=True)
 st.write("---")
 
 # 🌟 선생님 요청 멘트
@@ -22,17 +22,17 @@ gender = st.sidebar.radio("성별", ["남", "여"])
 if grade == "4학년":
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
-        "왕복오래달리기(심폐지구력)": {"avg": 35.0 if gender == "남" else 30.0, "max": 80.0 if gender == "남" else 70.0, "rev": False, "u": "회"},
+        "오래달리기(심폐지구력)": {"avg": 35.0 if gender == "남" else 30.0, "max": 80.0 if gender == "남" else 70.0, "rev": False, "u": "회"},
         "50m 달리기(순발력)": {"avg": 10.5 if gender == "남" else 11.2, "max": 8.0 if gender == "남" else 8.5, "rev": True, "u": "초"},
-        "앉아윗몸앞으로굽히기(유연성)": {"avg": 5.0 if gender == "남" else 8.0, "max": 18.0 if gender == "남" else 21.0, "rev": False, "u": "cm"},
+        "윗몸앞으로굽히기(유연성)": {"avg": 5.0 if gender == "남" else 8.0, "max": 18.0 if gender == "남" else 21.0, "rev": False, "u": "cm"},
         "악력(근력)": {"avg": 14.0 if gender == "남" else 13.0, "max": 24.0 if gender == "남" else 22.0, "rev": False, "u": "kg"}
     }
 else:
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
-        "오래달리기-걷기(심폐지구력)": {"avg": 400.0 if gender == "남" else 500.0, "max": 240.0 if gender == "남" else 300.0, "rev": True, "u": "초"},
+        "오래달리기(심폐지구력)": {"avg": 400.0 if gender == "남" else 500.0, "max": 240.0 if gender == "남" else 300.0, "rev": True, "u": "초"},
         "50m 달리기(순발력)": {"avg": 9.5 if gender == "남" else 10.2, "max": 7.5 if gender == "남" else 8.0, "rev": True, "u": "초"},
-        "앉아윗몸앞으로굽히기(유연성)": {"avg": 8.0 if gender == "남" else 11.0, "max": 20.0 if gender == "남" else 23.0, "rev": False, "u": "cm"},
+        "윗몸앞으로굽히기(유연성)": {"avg": 8.0 if gender == "남" else 11.0, "max": 20.0 if gender == "남" else 23.0, "rev": False, "u": "cm"},
         "악력(근력)": {"avg": 22.0 if gender == "남" else 20.0, "max": 35.0 if gender == "남" else 32.0, "rev": False, "u": "kg"}
     }
 
@@ -115,4 +115,13 @@ st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True, '
 st.write("### 📝 기록 데이터 확인")
 def format_val(val, label, unit):
     if grade == "6학년" and "심폐지구력" in label:
-        return f"{int(val //
+        m, s = int(val // 60), int(val % 60)
+        return f"{m}분 {s}초"
+    return f"{val} {unit}"
+
+df_res = {
+    "종목": lbls,
+    "1차 기록(3월)": [format_val(v1[k], k, base[k]['u']) for k in lbls],
+    "2차 기록(5월)": [format_val(v2[k], k, base[k]['u']) for k in lbls]
+}
+st.table(pd.DataFrame(df_res))
