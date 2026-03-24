@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 
-# 1. 페이지 설정
+# 1. 페이지 설정 (모바일 대응을 위해 레이아웃 최적화)
 st.set_page_config(page_title="나의 성장 기록", layout="centered")
 
 st.title("🌱 나의 성장 기록")
@@ -17,7 +17,7 @@ view_option = st.sidebar.radio("보고 싶은 기록", ["1차 기록 보기", "2
 grade = st.sidebar.selectbox("학년", ["4학년", "6학년"])
 gender = st.sidebar.radio("성별", ["남", "여"])
 
-# 3. 데이터 기준 설정 (체력 명칭 포함)
+# 3. 데이터 기준 설정
 if grade == "4학년":
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
@@ -46,7 +46,7 @@ v1, v2 = {}, {}
 with tab1:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.write(f"{k}")
+            st.write(k) # 글자 크기 통일
             m1 = st.number_input("분", value=int(v['avg'] // 60), key=f"1_{k}_m", min_value=0)
             s1 = st.number_input("초", value=int(v['avg'] % 60), key=f"1_{k}_s", min_value=0, max_value=59)
             v1[k] = float(m1 * 60 + s1)
@@ -57,7 +57,7 @@ with tab1:
 with tab2:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.write(f"{k}")
+            st.write(k) # 글자 크기 통일
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
             s2 = st.number_input("초", value=int(v['avg'] % 60), key=f"2_{k}_s", min_value=0, max_value=59)
             v2[k] = float(m2 * 60 + s2)
@@ -79,7 +79,7 @@ def calc_score(vals):
 lbls = list(base.keys())
 p_lbls = lbls + [lbls[0]]
 
-# 6. 차트 그리기
+# 6. 차트 그리기 (모바일 잘림 방지 및 여백 조정)
 fig = go.Figure()
 
 # 평균 기준선
@@ -102,13 +102,20 @@ if "2차" in view_option or "함께" in view_option:
 
 fig.update_layout(
     polar=dict(
-        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', ''])
+        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', '']),
+        angularaxis=dict(tickfont=dict(size=10), rotation=90, direction="clockwise")
     ),
-    showlegend=True, height=550
+    # 모바일 대응: 여백(margin) 최적화 및 패딩(pad) 추가로 글자 가림 방지
+    margin=dict(l=50, r=50, t=30, b=30),
+    legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+    dragmode=False,
+    height=450 # 차트 높이 조절로 모바일 가독성 향상
 )
-st.plotly_chart(fig, use_container_width=True)
 
-# 7. 데이터 표 출력
+# 7. 차트 렌더링
+st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+# 8. 데이터 표 출력
 def format_val(val, label, unit):
     if grade == "6학년" and "심폐지구력" in label:
         return f"{int(val // 60)}분 {int(val % 60)}초"
