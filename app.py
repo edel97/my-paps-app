@@ -5,11 +5,12 @@ import pandas as pd
 # 1. 페이지 설정
 st.set_page_config(page_title="나의 성장 기록", layout="centered")
 
-st.title("🌱 나의 성장 기록")
+# 🛠️ [수정] 제목 글자 크기를 모바일에 맞춰 조정 (기존보다 약간 작게)
+st.markdown("<h2 style='text-align: center;'>🌱 나의 성장 기록</h2>", unsafe_allow_html=True)
 st.write("---")
 
 # 🌟 선생님 요청 멘트
-st.info("기록은 숫자일 뿐, 어제보다 나아지려고 애쓴 너의 노력이 진짜!")
+st.info("🌟기록은 숫자일 뿐, 어제보다 나아지려고 애쓴 너의 노력이 진짜!")
 
 # 2. 설정 메뉴
 st.sidebar.header("⚙️ 설정")
@@ -97,31 +98,21 @@ if "2차" in view_option or "함께" in view_option:
         name='2차(5월)', line=dict(color='#E74C3C', width=3)
     ))
 
-# 🛠️ [중요] 차트가 돌아가거나 사라지지 않도록 레이아웃 고정
 fig.update_layout(
     polar=dict(
         radialaxis=dict(visible=True, range=[0, 10], tickvals=[5], ticktext=['평균']),
-        angularaxis=dict(tickfont=dict(size=11), rotation=90, direction="clockwise") # 방향 및 회전 고정
+        angularaxis=dict(tickfont=dict(size=11), rotation=90, direction="clockwise")
     ),
     showlegend=True,
-    margin=dict(l=100, r=100, t=50, b=50), # 여백 넉넉히 주어 글자 가림 방지
+    margin=dict(l=100, r=100, t=50, b=50),
     height=500,
-    dragmode=False # 마우스 드래그로 차트가 돌아가는 기능 차단
+    dragmode=False
 )
 
-# 카메라 아이콘 포함 렌더링
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True, 'scrollZoom': False})
 
 # 7. 데이터 표 출력
 st.write("### 📝 기록 데이터 확인")
 def format_val(val, label, unit):
     if grade == "6학년" and "심폐지구력" in label:
-        return f"{int(val // 60)}분 {int(val % 60)}초"
-    return f"{val} {unit}"
-
-df_data = {
-    "종목": lbls,
-    "1차 기록(3월)": [format_val(v1[k], k, base[k]['u']) for k in lbls],
-    "2차 기록(5월)": [format_val(v2[k], k, base[k]['u']) for k in lbls]
-}
-st.table(pd.DataFrame(df_data))
+        return f"{int(val //
