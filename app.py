@@ -46,7 +46,7 @@ v1, v2 = {}, {}
 with tab1:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.markdown(f"**{k}**") # 글자 크기 강제 통일
+            st.write(f"**{k}**")
             m1 = st.number_input("분", value=int(v['avg'] // 60), key=f"1_{k}_m", min_value=0)
             s1 = st.number_input("초", value=int(v['avg'] % 60), key=f"1_{k}_s", min_value=0, max_value=59)
             v1[k] = float(m1 * 60 + s1)
@@ -57,7 +57,7 @@ with tab1:
 with tab2:
     for k, v in base.items():
         if grade == "6학년" and "심폐지구력" in k:
-            st.markdown(f"**{k}**") # 글자 크기 강제 통일
+            st.write(f"**{k}**")
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
             s2 = st.number_input("초", value=int(v['avg'] % 60), key=f"2_{k}_s", min_value=0, max_value=59)
             v2[k] = float(m2 * 60 + s2)
@@ -82,6 +82,7 @@ p_lbls = lbls + [lbls[0]]
 # 6. 차트 그리기
 fig = go.Figure()
 
+# 평균 기준선
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, line=dict(color='gray', dash='dot', width=1), 
     name='평균 기록', hoverinfo='none'
@@ -99,21 +100,21 @@ if "2차" in view_option or "함께" in view_option:
         name='2차(5월)', line=dict(color='#E74C3C', width=3)
     ))
 
+# 🛠️ 가장 안전한 레이아웃 설정
 fig.update_layout(
     polar=dict(
-        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', '']),
-        angularaxis=dict(tickfont=dict(size=11), pad=15) # 글자 잘림 방지용 패딩
+        radialaxis=dict(visible=True, range=[0, 10], tickvals=[5], ticktext=['평균']),
+        angularaxis=dict(tickfont=dict(size=11))
     ),
-    margin=dict(l=60, r=60, t=40, b=40),
-    legend=dict(orientation="h", y=-0.2, x=0.5, xanchor="center"),
-    dragmode=False,
+    showlegend=True,
+    margin=dict(l=80, r=80, t=50, b=50),
     height=500
 )
 
-# 7. 차트 렌더링 (카메라 아이콘 활성화)
+# 카메라 아이콘 포함 렌더링
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
 
-# 8. 데이터 표 출력
+# 7. 데이터 표 출력
 def format_val(val, label, unit):
     if grade == "6학년" and "심폐지구력" in label:
         return f"{int(val // 60)}분 {int(val % 60)}초"
