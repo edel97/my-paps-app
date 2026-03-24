@@ -5,17 +5,22 @@ import pandas as pd
 # 1. 페이지 설정
 st.set_page_config(page_title="나의 성장 기록", layout="centered")
 
-st.title("🌱 나의 성장 기록")
+st.title("🌱 나의 체력 성장 기록")
 st.write("---")
-st.info("💡 평균 기록은 5점(중간), 1등급 만점은 10점(끝)으로 설계되었습니다.")
 
-# 2. 설정
+# 🌟 학생들에게 전하는 따뜻한 메시지
+st.info("""
+**"기록은 숫자일 뿐, 어제보다 조금 더 나아지려고 노력한 나의 진심이 진짜!  
+포기하지 않고 도전하는 우리가 멋지다! ✨
+""")
+
+# 2. 설정 메뉴
 st.sidebar.header("⚙️ 설정")
 view_option = st.sidebar.radio("보고 싶은 기록", ["1차 기록 보기", "2차 기록 보기", "1, 2차 함께 비교하기"])
 grade = st.sidebar.selectbox("학년", ["4학년", "6학년"])
 gender = st.sidebar.radio("성별", ["남", "여"])
 
-# 3. PAPS 정밀 기준 데이터 (avg: 평균/5점 위치, max: 1등급/10점 위치)
+# 3. 데이터 기준 (평균=5점, 충분한 성장=10점 위치)
 if grade == "4학년":
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
@@ -33,7 +38,7 @@ else: # 6학년
         "악력(근력)": {"avg": 22.0 if gender == "남" else 20.0, "max": 35.0 if gender == "남" else 32.0, "rev": False, "u": "kg"}
     }
 
-# 4. 입력
+# 4. 입력 칸
 st.sidebar.divider()
 col1, col2 = st.sidebar.columns(2)
 with col1:
@@ -43,16 +48,13 @@ with col2:
     st.write("### 2차 (5월)")
     v2 = {k: st.number_input(f"{k}", value=float(v['avg']), key=f"2_{k}") for k, v in base.items()}
 
-# 5. 점수 계산 (평균=5, 만점=10 선형 변환)
+# 5. 점수 계산
 def calc_score(vals):
     scores = []
     for k, v in base.items():
         val, avg, mx = vals[k], v['avg'], v['max']
-        if v['rev']: # 낮을수록 좋은 종목 (초)
-            # 평균보다 빠르면 5~10점 사이, 느리면 0~5점 사이
-            score = 5 + (avg - val) / (avg - mx) * 5
-        else: # 높을수록 좋은 종목 (회, cm, kg)
-            score = 5 + (val - avg) / (mx - avg) * 5
+        if v['rev']: score = 5 + (avg - val) / (avg - mx) * 5
+        else: score = 5 + (val - avg) / (mx - avg) * 5
         scores.append(min(10.0, max(0.0, float(score))))
     return scores + [scores[0]]
 
@@ -61,7 +63,8 @@ p_lbls = lbls + [lbls[0]]
 
 # 6. 차트 그리기
 fig = go.Figure()
-# 가이드라인 (평균 정오각형 선)
+
+# 평균 가이드라인
 fig.add_trace(go.Scatterpolar(r=[5]*6, theta=p_lbls, line=dict(color='gray', dash='dot', width=1), name='평균 기록', hoverinfo='none'))
 
 if "1차" in view_option or "함께" in view_option:
@@ -71,19 +74,24 @@ if "2차" in view_option or "함께" in view_option:
 
 fig.update_layout(
     polar=dict(
-        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', '1등급']),
-        angularaxis=dict(tickfont=dict(size=10))
+        radialaxis=dict(visible=True, range=[0, 10], tickvals=[0, 5, 10], ticktext=['', '평균', '나의 잠재력']),
+        angularaxis=dict(tickfont=dict(size=11))
     ),
     dragmode=False, showlegend=True, height=550
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# 7. 표 데이터
+# 7. 기록 데이터 확인 (비교 중심)
 st.write("### 📝 기록 데이터 확인")
 df = pd.DataFrame({
     "종목": lbls,
-    "1차(3월)": [f"{v1[k]} {base[k]['u']}" for k in lbls],
-    "2차(5월)": [f"{v2[k]} {base[k]['u']}" for k in lbls],
-    "1등급 기준": [f"{base[k]['max']} {base[k]['u']}" for k in lbls]
+    "1차 기록(3월)": [f"{v1[k]} {base[k]['u']}" for k in lbls],
+    "2차 기록(5월)": [f"{v2[k]} {base[k]['u']}" for k in lbls]
 })
 st.table(df)
+
+# 8. 격려의 메시지
+if "함께" in view_option:
+    st.write("---")
+    st.write("🎈 **선생님이 너에게 보내는 응원**")
+    st.write("너의 오각형이 조금씩 넓어지는 것은 그만큼 네 마음과 몸이 튼튼해졌다는 증거야. 결과보다 중요한 건 오늘 하루도 최선을 다했다는 사실이란다. 정말 자랑스러워!")
