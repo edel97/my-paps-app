@@ -14,7 +14,7 @@ st.info("🌟기록은 숫자일 뿐, 어제보다 나아지려고 애쓴 너의
 
 # 2. 설정 메뉴
 st.sidebar.header("⚙️ 설정")
-view_option = st.sidebar.radio("보고 싶은 기록", ["1차 기록 보기", "2차 기록 보기", "1, 2차 함께 비교하기"])
+view_option = st.sidebar.radio("나의 기록", ["1차 기록", "2차 기록", "1, 2차 함께 보기"])
 grade = st.sidebar.selectbox("학년", ["4학년", "6학년"])
 gender = st.sidebar.radio("성별", ["남", "여"])
 
