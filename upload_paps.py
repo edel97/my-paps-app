@@ -28,7 +28,6 @@ if grade == "4학년":
 else: # 6학년
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
-        # 6학년 심폐지구력은 '초' 단위 기준 (낮을수록 좋은 rev: True)
         "심폐지구력": {"avg": 400.0 if gender == "남" else 500.0, "max": 240.0 if gender == "남" else 300.0, "rev": True, "u": "초"},
         "순발력": {"avg": 9.5 if gender == "남" else 10.2, "max": 7.5 if gender == "남" else 8.0, "rev": True, "u": "초"},
         "유연성": {"avg": 8.0 if gender == "남" else 11.0, "max": 20.0 if gender == "남" else 23.0, "rev": False, "u": "cm"},
@@ -38,29 +37,10 @@ else: # 6학년
 lbls = list(base.keys())
 p_lbls = lbls + [lbls[0]]
 
-# 4. 점수 계산 함수 (6학년 분.초 변환 로직 포함)
+# 4. 점수 계산 함수
 def calc_score(row):
     scores = []
     
-    # 심폐지구력 값 처리
-    raw_cardio = float(row.get("심폐지구력", 0.0))
-    if grade == "6학년":
-        # 5.20 형태를 초로 변환 (5분 * 60 + 20초 = 320초)
-        minutes = int(raw_cardio)
-        seconds = int(round((raw_cardio - minutes) * 100))
-        processed_cardio = float(minutes * 60 + seconds)
-    else:
-        processed_cardio = raw_cardio
-
-    data_map = {
-        "실천의지": row.get("실천의지", 5.0),
-        "심폐지구력": processed_cardio,
-        "순발력": row.get("순발력", 15.0),
-        "유연성": row.get("유연성", 0.0),
-        "근력": row.get("근력", 0.0)
-    }
-    
-    for k, v in base.items():
-        val = data_map[k]
-        avg, mx = v['avg'], v['max']
-        if
+    # 심폐지구력 처리 (6학년 분.초 변환)
+    try:
+        raw_
