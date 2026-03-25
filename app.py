@@ -58,4 +58,5 @@ with tab2:
         if grade == "6학년" and "심폐지구력" in k:
             st.write(f"**{k}**")
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
-            s2 =
+            s2 = st.number_input("초", value=int(v['avg'] % 60), key=f"2_{k}_s", min_value=0, max_value=59)
+            v2[k] = float(m
