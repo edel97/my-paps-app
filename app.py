@@ -59,4 +59,69 @@ with tab2:
             st.write(f"**{k}**")
             m2 = st.number_input("분", value=int(v['avg'] // 60), key=f"2_{k}_m", min_value=0)
             s2 = st.number_input("초", value=int(v['avg'] % 60), key=f"2_{k}_s", min_value=0, max_value=59)
-            v2[k] = float(m
+            v2[k] = float(m2 * 60 + s2)
+        else:
+            v2[k] = st.number_input(f"{k} ({v['u']})", value=float(v['avg']), key=f"2_{k}")
+
+# 5. 점수 계산
+def calc_score(vals):
+    scores = []
+    for k, v in base.items():
+        val, avg, mx = vals[k], v['avg'], v['max']
+        if v['rev']:
+            score = 5 + (avg - val) / (avg - mx) * 5
+        else:
+            score = 5 + (val - avg) / (mx - avg) * 5
+        scores.append(min(10.0, max(0.0, float(score))))
+    return scores + [scores[0]]
+
+lbls = list(base.keys())
+p_lbls = lbls + [lbls[0]]
+
+# 6. 차트 그리기
+fig = go.Figure()
+
+# 평균선 명칭 수정
+fig.add_trace(go.Scatterpolar(
+    r=[5]*6, theta=p_lbls, line=dict(color='#BDC3C7', dash='dot', width=1), 
+    name='평균', hoverinfo='none'
+))
+
+if "1차" in view_option or "함께" in view_option:
+    fig.add_trace(go.Scatterpolar(
+        r=calc_score(v1), theta=p_lbls, fill='toself', 
+        name='1차 기록', line=dict(color='#3498DB', width=3)
+    ))
+
+if "2차" in view_option or "함께" in view_option:
+    fig.add_trace(go.Scatterpolar(
+        r=calc_score(v2), theta=p_lbls, fill='toself', 
+        name='2차 기록', line=dict(color='#E74C3C', width=3)
+    ))
+
+fig.update_layout(
+    polar=dict(
+        radialaxis=dict(visible=True, range=[0, 10], tickvals=[5], ticktext=['평균']),
+        angularaxis=dict(tickfont=dict(size=10), rotation=90, direction="clockwise")
+    ),
+    showlegend=True,
+    margin=dict(l=80, r=80, t=50, b=50),
+    height=500,
+    dragmode=False
+)
+
+st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+# 7. 데이터 표 출력
+st.write("### 📝 기록 데이터 확인")
+def format_val(val, label, unit):
+    if grade == "6학년" and "심폐지구력" in label:
+        return f"{int(val // 60)}분 {int(val % 60)}초"
+    return f"{val} {unit}"
+
+df_res = {
+    "종목": lbls,
+    "1차 기록": [format_val(v1[k], k, base[k]['u']) for k in lbls],
+    "2차 기록": [format_val(v2[k], k, base[k]['u']) for k in lbls]
+}
+st.table(pd.DataFrame(df_res))
