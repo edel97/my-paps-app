@@ -16,7 +16,7 @@ st.sidebar.divider()
 st.sidebar.write("### 📥 업로드용 양식 다운로드")
 st.sidebar.caption("아래 양식을 다운받아 학생들의 기록을 입력한 뒤 업로드해 줘!")
 
-# 다운로드용 템플릿(양식) 데이터 만들기
+# 다운로드용 템플릿
 template_df = pd.DataFrame({
     "이름": ["홍길동", "유관순"],
     "성별": ["남", "여"],
@@ -27,9 +27,7 @@ template_df = pd.DataFrame({
     "근력": [19.0, 19.0] if grade == "6학년" else [15.0, 13.5]
 })
 
-# 엑셀 한글 깨짐 완벽 해결
 csv_template = template_df.to_csv(index=False).encode('utf-8-sig')
-
 st.sidebar.download_button(
     label="📄 CSV 입력 양식 다운로드", 
     data=csv_template, 
@@ -39,10 +37,11 @@ st.sidebar.download_button(
 
 st.sidebar.divider()
 st.sidebar.write("### 📂 데이터 업로드")
+st.sidebar.caption("⚠️ 주의: 1차와 2차 파일이 바뀌지 않게 꼭 확인해 줘!")
 up_file1 = st.sidebar.file_uploader("1차 기록(CSV) 업로드", type=["csv"])
 up_file2 = st.sidebar.file_uploader("2차 기록(CSV) 업로드 (선택)", type=["csv"])
 
-# 3. 등급표 기반 수치 반환 함수
+# 3. 기준표
 def get_base(student_grade, student_gender):
     if student_grade == "4학년":
         return {
@@ -61,14 +60,30 @@ def get_base(student_grade, student_gender):
             "악력(근력)": [19.0 if student_gender=="남" else 19.0, 39.4 if student_gender=="남" else 39.0, 0]
         }
 
+# 절대 기절하지 않는 파일 읽기 함수
 def load_csv(file):
-    try: 
-        df = pd.read_csv(file, encoding='utf-8-sig')
-    except: 
+    try:
         file.seek(0)
-        df = pd.read_csv(file, encoding='cp949')
-    df.columns = [c.strip() for c in df.columns]
+        df = pd.read_csv(file, encoding='utf-8-sig')
+    except:
+        try:
+            file.seek(0)
+            df = pd.read_csv(file, encoding='cp949')
+        except:
+            file.seek(0)
+            df = pd.read_csv(file, encoding='euc-kr')
+    
+    # 컬럼명에 있는 쓸데없는 공백이나 줄바꿈 완벽 제거
+    df.columns = [str(c).replace('\n', '').replace('\r', '').strip() for c in df.columns]
     return df
+
+# 이름 컬럼(성명, 학생명 등) 자동 찾기
+def get_name_col(df):
+    for col in df.columns:
+        clean_col = col.replace(" ", "")
+        if clean_col in ["이름", "성명", "학생명", "이름(성별)"]:
+            return col
+    return None
 
 def get_val_robust(row_data, keywords, default_val):
     for col, val in row_data.items():
@@ -88,4 +103,8 @@ def calculate_scores(row_data, current_grade, current_gender):
     if current_grade == "6학년":
         cardio = int(v_raw_cardio)*60 + int(round((v_raw_cardio-int(v_raw_cardio))*100))
     else: 
-        cardio = v_
+        cardio = v_raw_cardio
+        
+    d_map = {
+        "실천의지": get_val_robust(row_data, ["실천의지"], 5.0),
+        "심폐지구력": cardio,
