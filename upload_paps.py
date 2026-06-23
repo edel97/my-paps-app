@@ -50,4 +50,80 @@ def load_csv(file):
     return df
 
 # 점수 계산 헬퍼 함수
-def calculate_scores(row_data
+def calculate_scores(row_data):
+    v_raw = float(row_data.get("심폐지구력", 0))
+    if grade == "6학년":
+        cardio = int(v_raw)*60 + int(round((v_raw-int(v_raw))*100))
+    else: 
+        cardio = v_raw
+        
+    d_map = {
+        "실천의지": float(row_data.get("실천의지", 5)),
+        "심폐지구력": cardio,
+        "순발력": float(row_data.get("순발력", 15)),
+        "유연성": float(row_data.get("유연성", 0)),
+        "근력": float(row_data.get("근력", 0))
+    }
+    
+    sc = []
+    for k, b in base.items():
+        val = next((v for key, v in d_map.items() if key in k), 5.0)
+        s = 5+(b[0]-val)/(b[0]-b[1])*5 if b[2] else 5+(val-b[0])/(b[1]-b[0])*5
+        sc.append(min(10.0, max(0.0, float(s))))
+    return sc
+
+# 4. 데이터 처리 및 차트 그리기
+if up_file1 or up_file2:
+    try:
+        df1 = load_csv(up_file1) if up_file1 else None
+        df2 = load_csv(up_file2) if up_file2 else None
+        
+        # 1차, 2차 데이터에 있는 모든 학생 이름 모으기 (중복 제거)
+        names = []
+        if df1 is not None and "이름" in df1.columns: names.extend(df1["이름"].dropna().tolist())
+        if df2 is not None and "이름" in df2.columns: names.extend(df2["이름"].dropna().tolist())
+        unique_names = sorted(list(set(names)))
+        
+        if not unique_names:
+            st.warning("⚠️ 업로드된 파일에서 '이름' 컬럼을 찾을 수 없거나 데이터가 없습니다.")
+        else:
+            st.success(f"✅ {grade} {gender}학생 총 {len(unique_names)}명 분석 완료")
+            cols = st.columns(3)
+            
+            for i, name in enumerate(unique_names):
+                with cols[i%3]:
+                    fig = go.Figure()
+                    
+                    # 기준선(평균)
+                    fig.add_trace(go.Scatterpolar(r=[5]*6, theta=display_items+[display_items[0]], 
+                                                  line=dict(color='#BDC3C7', dash='dot'), name='평균'))
+                    
+                    # 1차 기록 그리기 (면적 색칠 제거, 파란색 선)
+                    if df1 is not None and name in df1["이름"].values:
+                        row1 = df1[df1["이름"] == name].iloc[0]
+                        scores1 = calculate_scores(row1)
+                        fig.add_trace(go.Scatterpolar(r=scores1+[scores1[0]], theta=display_items+[display_items[0]], 
+                                                      fill='none', name='1차 기록', line=dict(color='#3498DB', width=3)))
+                        
+                    # 2차 기록 그리기 (면적 색칠 제거, 빨간색 선)
+                    if df2 is not None and name in df2["이름"].values:
+                        row2 = df2[df2["이름"] == name].iloc[0]
+                        scores2 = calculate_scores(row2)
+                        fig.add_trace(go.Scatterpolar(r=scores2+[scores2[0]], theta=display_items+[display_items[0]], 
+                                                      fill='none', name='2차 기록', line=dict(color='#E74C3C', width=3)))
+                        
+                    fig.update_layout(
+                        polar=dict(
+                            radialaxis=dict(visible=True, range=[0, 10], tickvals=[5], ticktext=['평균']),
+                            angularaxis=dict(tickfont=dict(size=10), rotation=90, direction="clockwise")
+                        ),
+                        showlegend=True, 
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+                        height=480, margin=dict(l=60, r=60, t=50, b=50),
+                        title=dict(text=f"👤 {name}", x=0.5, font=dict(size=17))
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    st.write("---")
+                    
+    except Exception as e: 
+        st.error(f"⚠️ 파일 처리 중 오류가 발생했습니다: {e}")
