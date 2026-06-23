@@ -1,6 +1,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
+import io
 
 # 1. 페이지 설정
 st.set_page_config(page_title="PAPS 정밀 진단", layout="wide")
@@ -10,34 +11,55 @@ st.write("---")
 # 2. 사이드바 설정
 st.sidebar.write("### 📝 학급 설정")
 grade = st.sidebar.selectbox("학년 선택", ["4학년", "6학년"])
-gender = st.sidebar.radio("성별 선택", ["남", "여"])
+# 성별 선택 버튼은 이제 필요 없으므로 삭제! (파일에서 알아서 읽음)
+
+st.sidebar.divider()
+st.sidebar.write("### 📥 업로드용 양식 다운로드")
+st.sidebar.caption("아래 양식을 다운받아 학생들의 기록을 입력한 뒤 업로드해 줘!")
+
+# 다운로드용 템플릿(양식) 데이터 만들기
+template_df = pd.DataFrame({
+    "이름": ["홍길동", "유관순"],
+    "성별": ["남", "여"],
+    "실천의지": [5.0, 5.0],
+    "심폐지구력": [429.0, 429.0] if grade == "6학년" else [45.0, 40.0],
+    "순발력": [10.0, 10.7] if grade == "6학년" else [10.5, 11.0],
+    "유연성": [1.0, 6.2] if grade == "6학년" else [1.0, 5.0],
+    "근력": [19.0, 19.0] if grade == "6학년" else [15.0, 13.5]
+})
+# 한글이 깨지지 않게 utf-8-sig로 변환
+csv_template = template_df.to_csv(index=False, encoding='utf-8-sig')
+st.sidebar.download_button(
+    label="📄 CSV 입력 양식 다운로드", 
+    data=csv_template, 
+    file_name="PAPS_입력양식.csv", 
+    mime="text/csv"
+)
 
 st.sidebar.divider()
 st.sidebar.write("### 📂 데이터 업로드")
-st.sidebar.caption("※ '이름' 컬럼을 기준으로 1차와 2차 기록을 비교합니다.")
+st.sidebar.caption("※ 다운받은 양식에 맞춰 '이름'과 '성별'을 꼭 적어줘.")
 up_file1 = st.sidebar.file_uploader("1차 기록(CSV) 업로드", type=["csv"])
 up_file2 = st.sidebar.file_uploader("2차 기록(CSV) 업로드 (선택)", type=["csv"])
 
-# 3. 등급표 기반 수치 설정 [평균, 만점, 반비례여부(1은 작을수록 좋음)]
-if grade == "4학년":
-    base = {
-        "실천의지": [5.0, 10.0, 0],
-        "왕복오래달리기(심폐지구력)": [45.0 if gender=="남" else 40.0, 103.0 if gender=="남" else 100.0, 0], 
-        "50m 달리기(순발력)": [10.5 if gender=="남" else 11.0, 8.7 if gender=="남" else 9.3, 1],
-        "앉아윗몸앞으로굽히기(유연성)": [1.0 if gender=="남" else 5.0, 18.0 if gender=="남" else 22.0, 0],
-        "악력(근력)": [15.0 if gender=="남" else 13.5, 36.0 if gender=="남" else 33.6, 0]
-    }
-else: # 6학년
-    base = {
-        "실천의지": [5.0, 10.0, 0],
-        "오래달리기-걷기(심폐지구력)": [379.0 if gender=="남" else 429.0, 243.0 if gender=="남" else 243.0, 1],
-        "50m 달리기(순발력)": [10.0 if gender=="남" else 10.7, 7.77 if gender=="남" else 8.66, 1],
-        "앉아윗몸앞으로굽히기(유연성)": [1.0 if gender=="남" else 6.2, 18.0 if gender=="남" else 26.0, 0],
-        "악력(근력)": [19.0 if gender=="남" else 19.0, 39.4 if gender=="남" else 39.0, 0]
-    }
-
-lbls = list(base.keys())
-display_items = [k.replace("(", "\n(") for k in lbls]
+# 3. 등급표 기반 수치 반환 함수 (학생 성별에 맞춰 그때그때 꺼내 씀)
+def get_base(student_grade, student_gender):
+    if student_grade == "4학년":
+        return {
+            "실천의지": [5.0, 10.0, 0],
+            "왕복오래달리기(심폐지구력)": [45.0 if student_gender=="남" else 40.0, 103.0 if student_gender=="남" else 100.0, 0], 
+            "50m 달리기(순발력)": [10.5 if student_gender=="남" else 11.0, 8.7 if student_gender=="남" else 9.3, 1],
+            "앉아윗몸앞으로굽히기(유연성)": [1.0 if student_gender=="남" else 5.0, 18.0 if student_gender=="남" else 22.0, 0],
+            "악력(근력)": [15.0 if student_gender=="남" else 13.5, 36.0 if student_gender=="남" else 33.6, 0]
+        }
+    else: # 6학년
+        return {
+            "실천의지": [5.0, 10.0, 0],
+            "오래달리기-걷기(심폐지구력)": [379.0 if student_gender=="남" else 429.0, 243.0 if student_gender=="남" else 243.0, 1],
+            "50m 달리기(순발력)": [10.0 if student_gender=="남" else 10.7, 7.77 if student_gender=="남" else 8.66, 1],
+            "앉아윗몸앞으로굽히기(유연성)": [1.0 if student_gender=="남" else 6.2, 18.0 if student_gender=="남" else 26.0, 0],
+            "악력(근력)": [19.0 if student_gender=="남" else 19.0, 39.4 if student_gender=="남" else 39.0, 0]
+        }
 
 # CSV 읽기 헬퍼 함수
 def load_csv(file):
@@ -50,9 +72,10 @@ def load_csv(file):
     return df
 
 # 점수 계산 헬퍼 함수
-def calculate_scores(row_data):
+def calculate_scores(row_data, current_grade, current_gender):
+    base = get_base(current_grade, current_gender)
     v_raw = float(row_data.get("심폐지구력", 0))
-    if grade == "6학년":
+    if current_grade == "6학년":
         cardio = int(v_raw)*60 + int(round((v_raw-int(v_raw))*100))
     else: 
         cardio = v_raw
@@ -87,29 +110,45 @@ if up_file1 or up_file2:
         if not unique_names:
             st.warning("⚠️ 업로드된 파일에서 '이름' 컬럼을 찾을 수 없거나 데이터가 없습니다.")
         else:
-            st.success(f"✅ {grade} {gender}학생 총 {len(unique_names)}명 분석 완료")
+            st.success(f"✅ {grade} 학생 총 {len(unique_names)}명 분석 완료 (남녀 기준 자동 적용됨)")
             cols = st.columns(3)
             
             for i, name in enumerate(unique_names):
+                # 파일에서 이 학생의 성별 알아내기 (기본값: 남)
+                student_gender = "남"
+                if df1 is not None and name in df1["이름"].values and "성별" in df1.columns:
+                    student_gender = str(df1[df1["이름"] == name].iloc[0]["성별"]).strip()
+                elif df2 is not None and name in df2["이름"].values and "성별" in df2.columns:
+                    student_gender = str(df2[df2["이름"] == name].iloc[0]["성별"]).strip()
+                
+                # 혹시 '남', '여'가 아닌 이상한 글자가 들어있으면 안전하게 '남'으로 처리
+                if student_gender not in ["남", "여"]: 
+                    student_gender = "남"
+
                 with cols[i%3]:
                     fig = go.Figure()
+                    
+                    # 현재 학생 성별에 맞는 기준표 가져오기
+                    current_base = get_base(grade, student_gender)
+                    lbls = list(current_base.keys())
+                    display_items = [k.replace("(", "\n(") for k in lbls]
                     
                     # 기준선(평균)
                     fig.add_trace(go.Scatterpolar(r=[5]*6, theta=display_items+[display_items[0]], 
                                                   line=dict(color='#BDC3C7', dash='dot'), name='평균'))
                     
-                    # 1차 기록 그리기 (투명도 30% 파란색 면 추가)
+                    # 1차 기록 그리기
                     if df1 is not None and name in df1["이름"].values:
                         row1 = df1[df1["이름"] == name].iloc[0]
-                        scores1 = calculate_scores(row1)
+                        scores1 = calculate_scores(row1, grade, student_gender)
                         fig.add_trace(go.Scatterpolar(r=scores1+[scores1[0]], theta=display_items+[display_items[0]], 
                                                       fill='toself', fillcolor='rgba(52, 152, 219, 0.3)', 
                                                       name='1차 기록', line=dict(color='#3498DB', width=3)))
                         
-                    # 2차 기록 그리기 (투명도 30% 빨간색 면 추가)
+                    # 2차 기록 그리기
                     if df2 is not None and name in df2["이름"].values:
                         row2 = df2[df2["이름"] == name].iloc[0]
-                        scores2 = calculate_scores(row2)
+                        scores2 = calculate_scores(row2, grade, student_gender)
                         fig.add_trace(go.Scatterpolar(r=scores2+[scores2[0]], theta=display_items+[display_items[0]], 
                                                       fill='toself', fillcolor='rgba(231, 76, 60, 0.3)', 
                                                       name='2차 기록', line=dict(color='#E74C3C', width=3)))
@@ -122,7 +161,7 @@ if up_file1 or up_file2:
                         showlegend=True, 
                         legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
                         height=480, margin=dict(l=60, r=60, t=50, b=50),
-                        title=dict(text=f"👤 {name}", x=0.5, font=dict(size=17))
+                        title=dict(text=f"👤 {name} ({student_gender})", x=0.5, font=dict(size=17))
                     )
                     st.plotly_chart(fig, use_container_width=True)
                     st.write("---")
