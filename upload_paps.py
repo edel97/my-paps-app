@@ -40,5 +40,4 @@ lbls = list(base.keys())
 display_items = [k.replace("(", "\n(") for k in lbls]
 
 # CSV 읽기 헬퍼 함수
-def load_csv(file):
-    try:
+def load
