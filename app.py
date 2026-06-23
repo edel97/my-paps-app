@@ -18,22 +18,23 @@ view_option = st.sidebar.radio("기록 보기", ["1차 기록", "2차 기록", "
 grade = st.sidebar.selectbox("학년", ["4학년", "6학년"])
 gender = st.sidebar.radio("성별", ["남", "여"])
 
-# 3. 2026 국가기준 (평균=3등급 하한, 만점=1등급 하한)
+# 3. 요청하신 새로운 국가기준 반영 (평균=3등급 하한, 만점=1등급 하한)
 if grade == "4학년":
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
-        "왕복오래달리기(심폐지구력)": {"avg": 45.0 if gender == "남" else 40.0, "max": 96.0 if gender == "남" else 77.0, "rev": False, "u": "회"},
-        "50m 달리기(순발력)": {"avg": 10.5 if gender == "남" else 11.0, "max": 8.8 if gender == "남" else 9.4, "rev": True, "u": "초"},
-        "앉아윗몸앞으로굽히기(유연성)": {"avg": 1.0 if gender == "남" else 5.0, "max": 8.0 if gender == "남" else 10.0, "rev": False, "u": "cm"},
-        "악력(근력)": {"avg": 15.0 if gender == "남" else 13.5, "max": 31.0 if gender == "남" else 29.0, "rev": False, "u": "kg"}
+        "왕복오래달리기(심폐지구력)": {"avg": 45.0 if gender == "남" else 40.0, "max": 103.0 if gender == "남" else 100.0, "rev": False, "u": "회"},
+        "50m 달리기(순발력)": {"avg": 10.5 if gender == "남" else 11.0, "max": 8.7 if gender == "남" else 9.3, "rev": True, "u": "초"},
+        "앉아윗몸앞으로굽히기(유연성)": {"avg": 1.0 if gender == "남" else 5.0, "max": 18.0 if gender == "남" else 22.0, "rev": False, "u": "cm"},
+        "악력(근력)": {"avg": 15.0 if gender == "남" else 13.5, "max": 36.0 if gender == "남" else 33.6, "rev": False, "u": "kg"}
     }
 else: # 6학년
     base = {
         "실천의지": {"avg": 5.0, "max": 10.0, "rev": False, "u": "점"},
-        "오래달리기-걷기(심폐지구력)": {"avg": 379.0 if gender == "남" else 429.0, "max": 250.0 if gender == "남" else 299.0, "rev": True, "u": "초"},
-        "50m 달리기(순발력)": {"avg": 10.0 if gender == "남" else 10.7, "max": 8.1 if gender == "남" else 8.9, "rev": True, "u": "초"},
-        "앉아윗몸앞으로굽히기(유연성)": {"avg": 1.0 if gender == "남" else 5.0, "max": 8.0 if gender == "남" else 14.0, "rev": False, "u": "cm"},
-        "악력(근력)": {"avg": 19.0 if gender == "남" else 19.0, "max": 35.0 if gender == "남" else 33.0, "rev": False, "u": "kg"}
+        # 4.03분 = 243초 / 6.19분 = 379초 / 7.09분 = 429초
+        "오래달리기-걷기(심폐지구력)": {"avg": 379.0 if gender == "남" else 429.0, "max": 243.0 if gender == "남" else 243.0, "rev": True, "u": "초"},
+        "50m 달리기(순발력)": {"avg": 10.0 if gender == "남" else 10.7, "max": 7.77 if gender == "남" else 8.66, "rev": True, "u": "초"},
+        "앉아윗몸앞으로굽히기(유연성)": {"avg": 1.0 if gender == "남" else 6.2, "max": 18.0 if gender == "남" else 26.0, "rev": False, "u": "cm"},
+        "악력(근력)": {"avg": 19.0 if gender == "남" else 19.0, "max": 39.4 if gender == "남" else 39.0, "rev": False, "u": "kg"}
     }
 
 # 4. 입력 섹션
@@ -81,7 +82,6 @@ p_lbls = lbls + [lbls[0]]
 # 6. 차트 그리기
 fig = go.Figure()
 
-# 평균선 명칭 수정
 fig.add_trace(go.Scatterpolar(
     r=[5]*6, theta=p_lbls, line=dict(color='#BDC3C7', dash='dot', width=1), 
     name='평균', hoverinfo='none'
