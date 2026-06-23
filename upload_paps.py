@@ -13,21 +13,22 @@ grade = st.sidebar.selectbox("학년 선택", ["4학년", "6학년"])
 gender = st.sidebar.radio("성별 선택", ["남", "여"])
 
 # 3. 등급표 기반 수치 설정 (실천의지를 첫 번째로 배치하여 12시 방향 고정)
+# 새 기준 반영 완료 [평균, 만점, 반비례여부(1은 작을수록 좋음)]
 if grade == "4학년":
     base = {
         "실천의지": [5.0, 10.0, 0],
-        "왕복오래달리기(심폐지구력)": [45.0 if gender=="남" else 40.0, 96.0 if gender=="남" else 77.0, 0], 
-        "50m 달리기(순발력)": [10.5 if gender=="남" else 11.0, 8.8 if gender=="남" else 9.4, 1],
-        "앉아윗몸앞으로굽히기(유연성)": [1.0 if gender=="남" else 5.0, 8.0 if gender=="남" else 10.0, 0],
-        "악력(근력)": [15.0 if gender=="남" else 13.5, 31.0 if gender=="남" else 29.0, 0]
+        "왕복오래달리기(심폐지구력)": [45.0 if gender=="남" else 40.0, 103.0 if gender=="남" else 100.0, 0], 
+        "50m 달리기(순발력)": [10.5 if gender=="남" else 11.0, 8.7 if gender=="남" else 9.3, 1],
+        "앉아윗몸앞으로굽히기(유연성)": [1.0 if gender=="남" else 5.0, 18.0 if gender=="남" else 22.0, 0],
+        "악력(근력)": [15.0 if gender=="남" else 13.5, 36.0 if gender=="남" else 33.6, 0]
     }
 else: # 6학년
     base = {
         "실천의지": [5.0, 10.0, 0],
-        "오래달리기-걷기(심폐지구력)": [379.0 if gender=="남" else 429.0, 250.0 if gender=="남" else 299.0, 1],
-        "50m 달리기(순발력)": [10.0 if gender=="남" else 10.7, 8.1 if gender=="남" else 8.9, 1],
-        "앉아윗몸앞으로굽히기(유연성)": [1.0 if gender=="남" else 5.0, 8.0 if gender=="남" else 14.0, 0],
-        "악력(근력)": [19.0 if gender=="남" else 19.0, 35.0 if gender=="남" else 33.0, 0]
+        "오래달리기-걷기(심폐지구력)": [379.0 if gender=="남" else 429.0, 243.0 if gender=="남" else 243.0, 1],
+        "50m 달리기(순발력)": [10.0 if gender=="남" else 10.7, 7.77 if gender=="남" else 8.66, 1],
+        "앉아윗몸앞으로굽히기(유연성)": [1.0 if gender=="남" else 6.2, 18.0 if gender=="남" else 26.0, 0],
+        "악력(근력)": [19.0 if gender=="남" else 19.0, 39.4 if gender=="남" else 39.0, 0]
     }
 
 lbls = list(base.keys())
@@ -38,7 +39,9 @@ display_items = [k.replace("(", "\n(") for k in lbls]
 if up_file:
     try:
         try: df = pd.read_csv(up_file, encoding='utf-8-sig')
-        except: up_file.seek(0); df = pd.read_csv(up_file, encoding='cp949')
+        except: 
+            up_file.seek(0)
+            df = pd.read_csv(up_file, encoding='cp949')
         df.columns = [c.strip() for c in df.columns]
         
         st.success(f"✅ {grade} {gender}학생 분석 완료")
