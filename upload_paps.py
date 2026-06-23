@@ -21,7 +21,7 @@ template_df = pd.DataFrame({
     "심폐지구력": [429.0, 429.0] if grade == "6학년" else [45.0, 40.0],
     "순발력": [10.0, 10.7] if grade == "6학년" else [10.5, 11.0],
     "유연성": [1.0, 6.2] if grade == "6학년" else [1.0, 5.0],
-    "근력": [19.0, 19.0] if grade == "6학년" else [15.0, 13.5]
+    "악력": [19.0, 19.0] if grade == "6학년" else [15.0, 13.5]
 })
 csv_template = template_df.to_csv(index=False).encode('utf-8-sig')
 st.sidebar.download_button(label="📄 CSV 입력 양식 다운로드", data=csv_template, file_name="PAPS_입력양식.csv", mime="text/csv")
@@ -34,12 +34,12 @@ up_file2 = st.sidebar.file_uploader("2차 기록(CSV) 업로드 (선택)", type=
 # 3. PAPS 통합 기준 데이터
 PAPS_BASE = {
     "4학년": {
-        "남": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [45.0, 103.0, 0], "순발력": [10.5, 8.7, 1], "유연성": [1.0, 18.0, 0], "근력": [15.0, 36.0, 0]},
-        "여": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [40.0, 100.0, 0], "순발력": [11.0, 9.3, 1], "유연성": [5.0, 22.0, 0], "근력": [13.5, 33.6, 0]}
+        "남": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [45.0, 103.0, 0], "순발력": [10.5, 8.7, 1], "유연성": [1.0, 18.0, 0], "악력": [15.0, 36.0, 0]},
+        "여": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [40.0, 100.0, 0], "순발력": [11.0, 9.3, 1], "유연성": [5.0, 22.0, 0], "악력": [13.5, 33.6, 0]}
     },
     "6학년": {
-        "남": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [379.0, 243.0, 1], "순발력": [10.0, 7.77, 1], "유연성": [1.0, 18.0, 0], "근력": [19.0, 39.4, 0]},
-        "여": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [429.0, 243.0, 1], "순발력": [10.7, 8.66, 1], "유연성": [6.2, 26.0, 0], "근력": [19.0, 39.0, 0]}
+        "남": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [379.0, 243.0, 1], "순발력": [10.0, 7.77, 1], "유연성": [1.0, 18.0, 0], "악력": [19.0, 39.4, 0]},
+        "여": {"실천의지": [5.0, 10.0, 0], "심폐지구력": [429.0, 243.0, 1], "순발력": [10.7, 8.66, 1], "유연성": [6.2, 26.0, 0], "악력": [19.0, 39.0, 0]}
     }
 }
 
@@ -64,17 +64,17 @@ def get_val_robust(row, keywords, default):
 def calc_scores(row, g, gnd):
     v_cardio = get_val_robust(row, ["심폐", "오래달리기", "왕복"], 0.0)
     if g == "6학년":
-        v_cardio = int(v_cardio)*60 + int(round((v_cardio-int(v_cardio))*100))
+        v_cardio = int(v_cardio)*60 + int(round((v_cardio-int(v_raw_cardio if 'v_raw_cardio' in locals() else v_cardio))*100))
         
     d_map = {
         "실천의지": get_val_robust(row, ["실천의지"], 5.0), "심폐지구력": v_cardio,
         "순발력": get_val_robust(row, ["순발력", "50m", "50미터"], 15.0),
-        "유연성": get_val_robust(row, ["유연성", "앉아", "윗몸"], 0.0), "근력": get_val_robust(row, ["근력", "악력"], 0.0)
+        "유연성": get_val_robust(row, ["유연성", "앉아", "윗몸"], 0.0), "악력": get_val_robust(row, ["근력", "악력"], 0.0)
     }
     
     std_base = PAPS_BASE[g][gnd]
     sc = []
-    for k in ["실천의지", "심폐지구력", "순발력", "유연성", "근력"]:
+    for k in ["실천의지", "심폐지구력", "순발력", "유연성", "악력"]:
         val, (avg, mx, rev) = d_map[k], std_base[k]
         s = 5 + (avg - val) / (avg - mx) * 5 if rev else 5 + (val - avg) / (mx - avg) * 5
         sc.append(min(10.0, max(0.0, float(s))))
@@ -96,7 +96,7 @@ if up_file1 or up_file2:
     else:
         st.success(f"✅ {grade} 학생 총 {len(unique_names)}명 분석 완료 (남녀 기준 자동 적용)")
         cols = st.columns(3)
-        display_items = ["실천의지", "심폐지구력", "순발력", "유연성", "근력"]
+        display_items = ["실천의지", "심폐지구력", "순발력", "유연성", "악력"]
         
         for i, name in enumerate(unique_names):
             gnd = "남"
@@ -108,20 +108,4 @@ if up_file1 or up_file2:
             
             with cols[i%3]:
                 fig = go.Figure()
-                fig.add_trace(go.Scatterpolar(r=[5]*6, theta=display_items+[display_items[0]], line=dict(color='#BDC3C7', dash='dot'), name='평균'))
-                
-                if df1 is not None and ncol1 and name in df1[ncol1].values:
-                    s1 = calc_scores(df1[df1[ncol1] == name].iloc[0], grade, gnd)
-                    fig.add_trace(go.Scatterpolar(r=s1+[s1[0]], theta=display_items+[display_items[0]], fill='toself', fillcolor='rgba(52, 152, 219, 0.3)', name='1차 기록', line=dict(color='#3498DB', width=3)))
-                    
-                if df2 is not None and ncol2 and name in df2[ncol2].values:
-                    s2 = calc_scores(df2[df2[ncol2] == name].iloc[0], grade, gnd)
-                    fig.add_trace(go.Scatterpolar(r=s2+[s2[0]], theta=display_items+[display_items[0]], fill='toself', fillcolor='rgba(231, 76, 60, 0.3)', name='2차 기록', line=dict(color='#E74C3C', width=3)))
-                    
-                fig.update_layout(
-                    polar=dict(radialaxis=dict(visible=True, range=[0, 10], tickvals=[5], ticktext=['평균']), angularaxis=dict(tickfont=dict(size=14, color='black'), rotation=90, direction="clockwise")),
-                    showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
-                    height=480, margin=dict(l=60, r=60, t=50, b=50), title=dict(text=f"👤 {name} ({gnd})", x=0.5, font=dict(size=17))
-                )
-                st.plotly_chart(fig, use_container_width=True)
-                st.write("---")
+                fig.
